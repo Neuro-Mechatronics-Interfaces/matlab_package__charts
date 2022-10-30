@@ -11,7 +11,7 @@ Plotting utility chart classes designed to show data captured on TMSi surface EM
 ---
 
 ### Raster ###
-** Example Use Case **
+_Example:_ Viewing the "raster" counts as a heatmap. 
 ```(matlab)
 myRaster = Raster_Array_8_8_L_Chart();
 updateTimescale(myRaster, 30);
@@ -33,8 +33,7 @@ This would produce a simulated raster heatmap that looks like the gif below.
 ![Example animated Raster Map](docs/Example__Raster_Chart.gif)
 
 ### Snippet ###
-** Example Use Case **  
-Let's say we want to visualize putative MUAP waveforms across the array and know how it "looks" in a spatial sense. This example illustrates how we can do this quickly.  
+_Example_: Let's say we want to visualize putative MUAP waveforms across the array and know how it "looks" in a spatial sense. This example illustrates how we can do this quickly.  
 ```(matlab)
 load('R:\NMLShare\raw_data\primate\Darcy\Darcy_2022_10_28\Darcy_2022_10_28_A_0.mat'); % Has data in array `samples`
 t = (0:((size(samples,2)-1)))./4000;
