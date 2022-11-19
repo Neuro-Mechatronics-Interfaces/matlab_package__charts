@@ -18,6 +18,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         Enable (1,64) logical = true(1,64)
         XData (:,1) double = NaN
         YData (:,:) double = NaN
+		LineWidth (1,1) double = 2
         Fc (1,2) double = [25, 400] % Cutoff frequencies
         Fs (1,1) double = 4000 % Sample rate
     end
@@ -29,6 +30,40 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         XGrid (:, 8) double = nan(8,8) % X-coordinate centers (mm)
         YGrid (:, 8) double = nan(8,8) % Y-coordinate centers (mm)
         Montage (1,1) string % Can be: "L88" "S88" "L48" "L84"
+    end 
+	methods
+        function obj = Snippet__Base_Chart(varargin)
+            if numel(varargin) == 0
+                fig = uifigure('Color', 'w', 'HandleVisibility', 'on');
+                figure(fig);
+            else
+                if isa(varargin{1}, 'matlab.ui.Figure')
+                    fig = varargin{1};
+                    set(fig, 'HandleVisibility', 'on', 'Color', 'w');
+                    figure(fig);
+                    varargin(1) = [];
+                elseif isa(varargin{1}, 'matlab.graphics.axis.Axes')
+                    g = varargin{1};
+                    while ~isa(g, 'matlab.ui.Figure')
+                        g = g.Parent;
+                    end
+                    set(g, 'HandleVisibility', 'on', 'Color', 'w');
+                    figure(g);
+                    varargin(1) = [];
+                end
+
+                if numel(varargin) > 0
+                    if isnumeric(varargin{1})
+                        varargin = ['CData', varargin];
+                    end
+                end
+            end
+            obj@matlab.graphics.chartcontainer.ChartContainer(varargin{:});
+        end
+		function title(obj, varargin)
+			ax = getAxes(obj);
+			title(ax, varargin{:});
+		end
     end
     methods(Access = protected)
         function setup(obj)
@@ -56,7 +91,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                 p(n) = matlab.graphics.chart.primitive.Line(...
                     'Parent', ax, ...
                     'SeriesIndex', n, ...
-                    'LineWidth', 2);
+                    'LineWidth', obj.LineWidth);
             end
             
             % Determine x-coordinates for electrodes
