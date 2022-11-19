@@ -3,4 +3,4 @@
 	url = git@github.com:m053m716/-io.git
 [submodule "+utils"]
 	path = +utils
-	url = git@github.com:Neuro-Mechatronics-Interfaces/MATLAB_Data_Plots.git
+	url = git@github.com:Neuro-Mechatronics-Interfaces/NHP_MATLAB_Utilities
