@@ -1,11 +1,11 @@
-function fig = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, varargin)
-%TILED_SNIPPET_ARRAYS  Create tiled snippet array figure(s)
+function fig = tiled_mean_arrays(SUBJ, YYYY, MM, DD, varargin)
+%TILED_MEAN_ARRAYS  Like tiled_snippet_arrays, but shows per-channel means.
 %
 % Syntax:
-%   fig = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, 'Name', value, ...);
+%   fig = tiled_mean_arrays(SUBJ, YYYY, MM, DD, 'Name', value, ...);
 %
 % Example:
-%   fig = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, 'Data', x);
+%   fig = tiled_mean_arrays(SUBJ, YYYY, MM, DD, 'Data', x);
 %
 % Inputs:
 %   SUBJ - Subject name (e.g. "Forrest")
@@ -17,22 +17,25 @@ function fig = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, varargin)
 
 pars = struct;
 pars.Array = "A";
+pars.Auto_Keep_Figure = false; % Setting true doesn't delete figure even if output is not requested.
 pars.Data = [];  % e.g. car_filt_data(:,1:64,:);  from UNI_DATA.mat file
 pars.Data_File = 'UNI_DATA.mat';
 pars.Experiment = ''; % e.g. "Forrest_2022_11_08_A_24";
 pars.Fc = []; % Set to 2 elements for bandpass (i.e. [25, 400]). 1 element for highpass.
 pars.Folder_Expression = 'Run*'; % For detecting folders in `interleaved` generated location
 pars.Force_Save = false; % set true to force save even if fig handle output is requested (doesn't delete figure in this case).
-pars.Grid_Layout = [4, 3]; % e.g. [4, 1] to make one column of 4 plots.
 pars.Input_Root = 'R:/NMLShare/generated_data/primate/DARPA_N3/N3_Patch';
+pars.Labels = true; % Set to false to turn off "grid" markings
 pars.T = [10, 30]; % ms from stim-onset for epochs of interest
 pars.TS = [];
 pars.Tag = ''; % e.g. "Run24_J_5_-13EMU_Biphasic-Anodal"
-pars.Trial_Indices = []; % e.g. iPlot = [1,2,10,12];
+pars.Tiled_Layout = [];  % Can send `tiled_layout` object and will use that as a container instead of making a new figure handle.
+pars.Tiled_Location = {1, [1,1]};
 pars.Type = @(varargin)Snippet_Array_8_8_L_Chart(varargin{:});
-pars.Output_Figure_Root = 'fig/Spatial-Snippets';
+pars.Output_Figure_Root = 'fig/Spatial-Averages';
 pars.Position = [250 250 875 650];
 pars.RMS_Range = [0, 1];
+pars.Use_CAR = true;
 
 if numel(varargin) > 0
     if isstruct(varargin{1})
@@ -43,10 +46,11 @@ end
 
 pars = utils.parse_parameters(pars, varargin{:});
 
+if isempty(pars.Experiment)
+    pars.Experiment = strjoin([string(SUBJ), num2str(YYYY, '%04d'), num2str(MM, '%02d'), num2str(DD, '%02d')], "_");
+end
+
 if isempty(pars.Tag)
-    if isempty(pars.Experiment)
-        pars.Experiment = strjoin([string(SUBJ), num2str(YYYY, '%04d'), num2str(MM, '%02d'), num2str(DD, '%02d')], "_");
-    end
     input_search = fullfile(pars.Input_Root, SUBJ, pars.Experiment, 'interleaved');
     F = dir(fullfile(input_search, pars.Folder_Expression));
     if isempty(F)
@@ -66,16 +70,16 @@ if numel(pars.Tag) > 1
     end
     for ii = 1:numel(pars.Tag)
         if nargout > 0
-            fig{ii} = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
+            fig{ii} = tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
         else
-            tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
+            tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
         end
     end
     return;
 end
 
 if isempty(pars.Data)
-   in = load(fullfile(pars.Input_Root, SUBJ, pars.Experiment, 'interleaved', pars.Tag, pars.Data_File),...
+    in = load(fullfile(pars.Input_Root, SUBJ, pars.Experiment, 'interleaved', pars.Tag, pars.Data_File),...
         'car_filt_data', 'filt_data', 't');
     if pars.Use_CAR
         data = in.car_filt_data;
@@ -108,53 +112,53 @@ if isempty(pars.Data)
             ch = 65:128;
         end
         if nargout > 0
-            fig.(array) = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:,ch,:));
+            fig.(array) = tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:,ch,:));
         else
-            tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:, ch, :));
+            tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:, ch, :));
         end
     end
     return;
 end
 
-if isempty(pars.Trial_Indices)
-    if ~isempty(pars.Grid_Layout)
-        k = pars.Grid_Layout(1)*pars.Grid_Layout(2);
-    else
-        k = size(pars.Data,3);
-    end
-    pars.Trial_Indices = randsample(size(pars.Data,3), k, false);
-end
-iPlot = sort(reshape(pars.Trial_Indices, 1, numel(pars.Trial_Indices)), 'ascend');
-
-fig = figure(...
-    'Name', 'Example Trials', ...
-    'Color', 'w',...
-    'Position',pars.Position);
-if isempty(pars.Grid_Layout)
-    L = tiledlayout(fig, 'flow');
+if isempty(pars.Tiled_Layout)
+    fig = figure(...
+        'Name', 'Example Trials', ...
+        'Color', 'w',...
+        'Position',pars.Position);
+    L = tiledlayout(fig,1,1);
+    meta = utils.pattern_name_to_metadata(pars.Tag);
+    title(L, sprintf("Trial Mean (N = %d): %s | %s (%d EMU)",...
+        size(pars.Data,3),meta.run, strcat(strrep(meta.optimizer, '_', '_{'), '}'), meta.stim.amplitude), ...
+        'FontName', 'Tahoma', 'Color', 'k');
+    subtitle(L, sprintf("(Array-%s | %3.1f-ms to %3.1f-ms after stim onset)", pars.Array, pars.T(1), pars.T(2)), ...
+        'FontName', 'Tahoma', 'Color', [0.65 0.65 0.65]);
 else
-    L = tiledlayout(fig, pars.Grid_Layout(1), pars.Grid_Layout(2));
+    fig = pars.Tiled_Layout.Parent;
+    L = pars.Tiled_Layout;
 end
-meta = utils.pattern_name_to_metadata(pars.Tag);
-title(L, sprintf("Example Trials: %s | %s (%d EMU)",meta.run, strcat(strrep(meta.optimizer, '_', '_{'), '}'), meta.stim.amplitude), ...
-    'FontName', 'Tahoma', 'Color', 'k');
-subtitle(L, sprintf("(Array-%s | %3.1f-ms to %3.1f-ms after stim onset)", pars.Array, pars.T(1), pars.T(2)), ...
-    'FontName', 'Tahoma', 'Color', [0.65 0.65 0.65]);
 
 iSample = (pars.TS.ms > pars.T(1)) & (pars.TS.ms <= pars.T(2));
-for ii = iPlot
-    nexttile(L);
-    h = pars.Type('XData', pars.TS.ms(iSample), 'YData', pars.Data(iSample,:,ii), ...
-        'Fc', pars.Fc, 'RMS_Range', pars.RMS_Range, ...
-        'Color_By_RMS', true, 'LineWidth', 1);
-    title(h, sprintf('Stim-%02d', ii));
+switch numel(pars.Fc)
+    case 0
+        tmp = pars.Data;
+    case 1
+        [b,a] = butter(1, pars.Fc ./ 2000, "high");
+        tmp = filter(b,a,pars.Data,[],1);
+    case 2
+        [b,a] = butter(1, pars.Fc ./ 2000, "bandpass");
+        tmp = filter(b,a,pars.Data,[],1);
 end
+mu = mean(abs(tmp(iSample,:,:)), 3);
+nexttile(L, pars.Tiled_Location{:});
+pars.Type('XData', pars.TS.ms(iSample), 'YData', mu, ...
+        'Fc', [], 'RMS_Range', pars.RMS_Range, 'Show_Labels', pars.Labels, ...
+        'Color_By_RMS', true, 'LineWidth', 1);
 
-if nargout < 1
+if ((nargout < 1) || pars.Force_Save) && ~pars.Auto_Keep_Figure
     if exist(pars.Output_Figure_Root, 'dir')==0
         mkdir(pars.Output_Figure_Root);
     end
-    fname = sprintf('%s_%s_%s_snippets', pars.Experiment, pars.Array, pars.Tag);
+    fname = sprintf('%s_%s_%s_averages', pars.Experiment, pars.Array, pars.Tag);
     saveas(fig, fullfile(pars.Output_Figure_Root, strcat(fname, '.png')));
     savefig(fig, fullfile(pars.Output_Figure_Root, fname));
     if ~pars.Force_Save
