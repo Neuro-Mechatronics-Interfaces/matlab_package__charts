@@ -1,6 +1,24 @@
 # TMSi MATLAB Plots #
 Plotting utility chart classes designed to show data captured on TMSi surface EMG array grids.  
 
+## Installation ##
+* Instructions for setting up your `ssh` credentials can be found at this [WTF NML](https://code.nml.wtf/tutorials/2022/06/26/credentials) post.
+* Instructions for tag conventions can be found at this [WTF NML](https://code.nml.wtf/sops/2022/10/23/tags_and_submodules) post.  
+
+### Shortcut ###
+To get this submodule in a repo that already has it added as a gitmodule in the `.gitattributes` file, use:  
+```(git)
+git clone --recurse-submodules git@github.com:Neuro-Mechatronics-Interfaces/2TMSi_MATLAB_Interface.git
+```
+In this case, `2TMSi_MATLAB_Interface` is a repo that has already initialized the `+charts` submodule.  
+
+To add this submodule to the gitmodules of an existing repo, use this:  
+```(git)
+git submodule add git@github.com:Neuro-Mechatronics-Interfaces/matlab_package__charts.git +charts
+```
+Note that it's important to the MATLAB workspace conventions that you add it as a folder called `+charts` otherwise the namespace conventions in MATLAB fail.  
+
+
 ## Chart Types ##  
 
 | Name | Example     |
@@ -13,7 +31,7 @@ Plotting utility chart classes designed to show data captured on TMSi surface EM
 ### Raster ###
 _Example:_ Viewing the "raster" counts as a heatmap. 
 ```(matlab)
-myRaster = Raster_Array_8_8_L_Chart();
+myRaster = charts.Raster_Array_8_8_L_Chart();
 updateTimescale(myRaster, 30);
 while isvalid(myRaster);
 	n = randi([1,50],1,1); % How many timestamps in this time-interval?
@@ -52,7 +70,7 @@ This should result in a figure which looks like the following image:
 Using only two lines of code, we can produce a spatially re-arranged version:  
 ```(matlab)
 figure('Name', 'Spatial Snippets');
-mySnippets = Snippet_Cloth_8_4_L_Chart('XData', t(iSignal)', 'YData', x(:, iSignal)');
+mySnippets = charts.Snippet_Cloth_8_4_L_Chart('XData', t(iSignal)', 'YData', x(:, iSignal)');
 ```  
 This should result in a figure which looks like the following image:  
 ![Original snippet data from recording](docs/Example__Snippet_Chart_2.png)

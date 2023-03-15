@@ -20,9 +20,9 @@ classdef Raster_Array_4_8_L_Chart < Raster__Base_Chart
     end
     methods (Access = protected)
         function setup(obj)
-            setup@Raster__Base_Chart(obj);
+            setup@charts.Raster__Base_Chart(obj);
             obj.Montage = "L48";
-            cfg = io.yaml.loadFile('config.yaml', "ConvertToArray", true);
+            cfg = charts.io.yaml.loadFile('config.yaml', "ConvertToArray", true);
             set(obj, ...
                 'Scale', cfg.(obj.Montage).Scale, ...
                 'XGrid', reshape(cfg.(obj.Montage).XGrid, 8, 8), ...

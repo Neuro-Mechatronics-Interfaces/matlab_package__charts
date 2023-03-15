@@ -1,4 +1,4 @@
-classdef Snippet_Array_8_8_L_Chart < Snippet__Base_Chart
+classdef Snippet_Array_8_8_L_Chart < charts.Snippet__Base_Chart
     % c = Snippet_Array_8_8_L_Chart('YData',Y,Name,Value,...)
     % Plots one time-series snippet for every column of matrix Y. 
     % Locations of each column of Y correspond to TMSi- 1-indexed channel
@@ -15,14 +15,14 @@ classdef Snippet_Array_8_8_L_Chart < Snippet__Base_Chart
 
     methods
         function obj = Snippet_Array_8_8_L_Chart(varargin)
-            obj@Snippet__Base_Chart(varargin{:});
+            obj@charts.Snippet__Base_Chart(varargin{:});
         end
     end
     methods (Access = protected)
         function setup(obj)
-            setup@Snippet__Base_Chart(obj);
+            setup@charts.Snippet__Base_Chart(obj);
             obj.Montage = "L88";
-            cfg = io.yaml.loadFile('config.yaml', "ConvertToArray", true);
+            cfg = charts.get_config('config.yaml');
             set(obj, ...
                 'Scale', cfg.(obj.Montage).Scale, ...
                 'XGrid', reshape(cfg.(obj.Montage).XGrid, 8, 8), ...

@@ -1,4 +1,4 @@
-classdef Raster__Base_Chart < Contour__Base_Chart
+classdef Raster__Base_Chart < charts.Contour__Base_Chart
     % c = Raster__Base_Chart('TLim', seconds(n), 'Name', Value,...) - Shades in a square with an intensity color for every gridded data point.
     %
     % Methods:
@@ -12,7 +12,7 @@ classdef Raster__Base_Chart < Contour__Base_Chart
     end
     methods
         function obj = Raster__Base_Chart(varargin)
-            obj@Contour__Base_Chart(varargin{:});
+            obj@charts.Contour__Base_Chart(varargin{:});
         end
         function append(obj, ch, ts)
             %APPEND  obj.append(ch, ts) - Append timestamp event(s) to channel(s).
@@ -38,7 +38,7 @@ classdef Raster__Base_Chart < Contour__Base_Chart
     end
     methods(Access = protected)
         function setup(obj)
-            setup@Contour__Base_Chart(obj);
+            setup@charts.Contour__Base_Chart(obj);
             obj.EMG.CData = zeros(8, 8);
             cb = getColorbar(obj);
             cb.Label.String = sprintf('N (past %s)', string(obj.TLim));
@@ -54,7 +54,7 @@ classdef Raster__Base_Chart < Contour__Base_Chart
                 cdata(ii) = sum(obj.ch == en_ch(ii));
             end
             obj.CData = cdata;
-            update@Contour__Base_Chart(obj);
+            update@charts.Contour__Base_Chart(obj);
         end
     end
 end

@@ -1,11 +1,11 @@
-classdef Raster_Array_8_4_L_Chart < Raster__Base_Chart
+classdef Raster_Array_8_4_L_Chart < charts.Raster__Base_Chart
     % c = Raster_Array_8_4_L_Chart('YData',Y,Name,Value,...)
     % Shades in a square with a given size for every gridded data point. 
     % You can also specify the additonal name-value arguments.
     %
     % Example:
     %   figure; 
-    %   test = Raster_Array_8_4_L_Chart();
+    %   test = charts.Raster_Array_8_4_L_Chart();
     %   while true;
     %       n = randi([1,100],1,1);
     %       test.append(randi([1,64],n,1), repmat(datetime('now'),n,1));
@@ -15,14 +15,14 @@ classdef Raster_Array_8_4_L_Chart < Raster__Base_Chart
 
     methods
         function obj = Raster_Array_8_4_L_Chart(varargin)
-            obj@Raster__Base_Chart(varargin{:});
+            obj@charts.Raster__Base_Chart(varargin{:});
         end
     end
     methods (Access = protected)
         function setup(obj)
-            setup@Raster__Base_Chart(obj);
+            setup@charts.Raster__Base_Chart(obj);
             obj.Montage = "L84";
-            cfg = io.yaml.loadFile('config.yaml', "ConvertToArray", true);
+            cfg = charts.get_config('config.yaml');
             set(obj, ...
                 'Scale', cfg.(obj.Montage).Scale, ...
                 'XGrid', reshape(cfg.(obj.Montage).XGrid, 8, 8), ...
