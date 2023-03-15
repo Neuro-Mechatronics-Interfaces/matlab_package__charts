@@ -15,21 +15,22 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
     
     properties(Access = public)
         Channel (1,64) double = 1:64
-        Color_By_RMS (1,1) logical = false
+        Color_By_RMS (1,1) logical = true
         Enable (1,64) logical = true(1,64)
         XData (:,1) double = NaN
         YData (:,:) double = NaN
-		LineWidth (1,1) double = 2
+		LineWidth (1,1) double = 1.25
         Fc double = [] % Cutoff frequencies
         Fs (1,1) double = 4000 % Sample rate
-        RMS_Range double = [0, 1]; % Expected RMS range for use with Color_By_RMS method of coloration
+        RMS_Range double = [0, 20]; % Expected RMS range for use with Color_By_RMS method of coloration
         Show_Labels logical = true;
     end
     properties(Transient,NonCopyable,SetAccess = protected,GetAccess = public)
         EMG (:,1) matlab.graphics.chart.primitive.Line
     end
     properties(SetAccess = protected, GetAccess = public)
-        Scale (1, 2) double = nan(1,2) % Scaling to constrain line object "spatial" bounds (mm)
+        YScale (1, 1) double = nan % If non-nan then this used to scale vertical bounds
+        XScale (1, 2) double = nan(1,2)% Scaling to constrain line object "spatial" bounds (mm)
         XGrid (:, 8) double = nan(8,8) % X-coordinate centers (mm)
         YGrid (:, 8) double = nan(8,8) % Y-coordinate centers (mm)
         Montage (1,1) string % Can be: "L88" "S88" "L48" "L84"
@@ -125,9 +126,9 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             
             % Determine x-coordinates for electrodes
             if any(isnan(obj.XData))
-                xdata = linspace(obj.Scale(1), obj.Scale(2), size(obj.YData,1));
+                xdata = linspace(obj.XScale(1), obj.XScale(2), size(obj.YData,1));
             else
-                xdata = linspace(obj.Scale(1), obj.Scale(2), numel(obj.XData));
+                xdata = linspace(obj.XScale(1), obj.XScale(2), numel(obj.XData));
             end
 %             tmp = zscore(obj.YData, 0, 1);
             tmp = obj.YData - mean(obj.YData, 1);
@@ -143,17 +144,22 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             
 
             ch = obj.Channel(obj.Enable);
+            if isnan(obj.YScale)
+                yscl = 6.5 * median(abs(ydata(:)));
+            else
+                yscl = obj.YScale;
+            end
             % Update the lines
             if obj.Color_By_RMS
                 for n = 1:nPlotLinesNeeded
                     p(n).XData = xdata + obj.XGrid(ch(n));
-                    p(n).YData = ydata(:,n) + obj.YGrid(ch(n));
+                    p(n).YData = ydata(:,n)./yscl + obj.YGrid(ch(n));
                     p(n).Color = double(obj.CData_(rms(ydata(:,n))))./255.0;
                 end
             else
                 for n = 1:nPlotLinesNeeded
                     p(n).XData = xdata + obj.XGrid(ch(n));
-                    p(n).YData = ydata(:,n) + obj.YGrid(ch(n));
+                    p(n).YData = ydata(:,n)./yscl + obj.YGrid(ch(n));
                 end
             end
             % Delete unneeded lines
