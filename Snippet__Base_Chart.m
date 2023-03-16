@@ -17,8 +17,10 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         Channel (1,64) double = 1:64
         Color_By_RMS (1,1) logical = true
         Enable (1,64) logical = true(1,64)
-        XData (:,1) double = NaN
+        XData (:,1) double = NaN    % Can be used to store time data
         YData (:,:) double = NaN
+        TrigData (:,1) double = NaN
+        TriggerBit (1,1) double = 9
 		LineWidth (1,1) double = 1.25
         Fc double = [] % Cutoff frequencies
         Fs (1,1) double = 4000 % Sample rate
@@ -57,6 +59,15 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                     set(g, 'HandleVisibility', 'on', 'Color', 'w');
                     figure(g);
                     varargin(1) = [];
+                elseif isa(varargin{1}, 'matlab.graphics.layout.TiledChartLayout')
+                    
+                    g = varargin{1};
+                    while ~isa(g, 'matlab.ui.Figure')
+                        g = g.Parent;
+                    end
+                    set(g, 'HandleVisibility', 'on', 'Color', 'w');
+                    g = varargin{1};
+                    varargin(1) = [];
                 end
 
                 if numel(varargin) > 0
@@ -69,6 +80,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             for iV = 1:2:numel(varargin)
                 obj.(varargin{iV}) = varargin{iV+1};
             end
+            obj.Parent = g;
         end
 		function title(obj, varargin)
 			ax = getAxes(obj);
@@ -113,6 +125,14 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             % Get the axes
             ax = getAxes(obj);
             
+            % Determine x-coordinates for electrodes
+            if any(isnan(obj.XData))
+                xdata = linspace(obj.XScale(1), obj.XScale(2), size(obj.YData,1));
+                obj.XData = ((1:size(obj.YData,1))')./obj.Fs;
+            else
+                xdata = linspace(obj.XScale(1), obj.XScale(2), numel(obj.XData));
+            end
+
             % Create extra lines as needed
             p = obj.EMG;
             nPlotLinesNeeded = size(obj.YData, 2);
@@ -121,16 +141,14 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                 p(n) = matlab.graphics.chart.primitive.Line(...
                     'Parent', ax, ...
                     'SeriesIndex', n, ...
-                    'LineWidth', obj.LineWidth);
+                    'Marker', 'x', ...
+                    'MarkerEdgeColor', 'r', ...
+                    'MarkerIndices', [], ...
+                    'LineWidth', obj.LineWidth, ...
+                    'UserData', obj.XData);
+                p(n).DataTipTemplate.DataTipRows(end+1) = dataTipTextRow('T (s)', 'UserData'); 
             end
             
-            % Determine x-coordinates for electrodes
-            if any(isnan(obj.XData))
-                xdata = linspace(obj.XScale(1), obj.XScale(2), size(obj.YData,1));
-            else
-                xdata = linspace(obj.XScale(1), obj.XScale(2), numel(obj.XData));
-            end
-%             tmp = zscore(obj.YData, 0, 1);
             tmp = obj.YData - mean(obj.YData, 1);
             if numel(obj.Fc) == 2
                 [b,a] = butter(4,(obj.Fc)./(obj.Fs / 2),'bandpass');
@@ -149,17 +167,28 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             else
                 yscl = obj.YScale;
             end
+
+            if ~any(isnan(obj.TrigData))
+                blanked_samples = find(bitand(obj.TrigData, 2^obj.TriggerBit) == 0);
+            else
+                blanked_samples = [];
+            end
+
             % Update the lines
             if obj.Color_By_RMS
                 for n = 1:nPlotLinesNeeded
-                    p(n).XData = xdata + obj.XGrid(ch(n));
-                    p(n).YData = ydata(:,n)./yscl + obj.YGrid(ch(n));
-                    p(n).Color = double(obj.CData_(rms(ydata(:,n))))./255.0;
+                    set(p(n), 'XData', xdata + obj.XGrid(ch(n)), ...
+                        'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
+                        'Color', double(obj.CData_(rms(ydata(:,n))))./255.0, ...
+                        'UserData', obj.XData, ...
+                        'MarkerIndices', blanked_samples);
                 end
             else
                 for n = 1:nPlotLinesNeeded
-                    p(n).XData = xdata + obj.XGrid(ch(n));
-                    p(n).YData = ydata(:,n)./yscl + obj.YGrid(ch(n));
+                    set(p(n), 'XData', xdata + obj.XGrid(ch(n)), ...
+                        'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
+                        'UserData', obj.XData, ...
+                        'MarkerIndices', blanked_samples);
                 end
             end
             % Delete unneeded lines
