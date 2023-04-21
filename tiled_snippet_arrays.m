@@ -29,7 +29,7 @@ pars.T = [10, 30]; % ms from stim-onset for epochs of interest
 pars.TS = [];
 pars.Tag = ''; % e.g. "Run24_J_5_-13EMU_Biphasic-Anodal"
 pars.Trial_Indices = []; % e.g. iPlot = [1,2,10,12];
-pars.Type = @(varargin)Snippet_Array_8_8_L_Chart(varargin{:});
+pars.Type = @(varargin)charts.Snippet_Array_8_8_L_Chart(varargin{:});
 pars.Output_Figure_Root = 'fig/Spatial-Snippets';
 pars.Position = [250 250 875 650];
 pars.RMS_Range = [0, 1];
@@ -66,9 +66,9 @@ if numel(pars.Tag) > 1
     end
     for ii = 1:numel(pars.Tag)
         if nargout > 0
-            fig{ii} = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
+            fig{ii} = charts.tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
         else
-            tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
+            charts.tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
         end
     end
     return;
@@ -108,9 +108,9 @@ if isempty(pars.Data)
             ch = 65:128;
         end
         if nargout > 0
-            fig.(array) = tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:,ch,:));
+            fig.(array) = charts.tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:,ch,:));
         else
-            tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:, ch, :));
+            charts.tiled_snippet_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:, ch, :));
         end
     end
     return;

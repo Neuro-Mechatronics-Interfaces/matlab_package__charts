@@ -31,7 +31,7 @@ pars.TS = [];
 pars.Tag = ''; % e.g. "Run24_J_5_-13EMU_Biphasic-Anodal"
 pars.Tiled_Layout = [];  % Can send `tiled_layout` object and will use that as a container instead of making a new figure handle.
 pars.Tiled_Location = {1, [1,1]};
-pars.Type = @(varargin)Snippet_Array_8_8_L_Chart(varargin{:});
+pars.Type = @(varargin)charts.Snippet_Array_8_8_L_Chart(varargin{:});
 pars.Output_Figure_Root = 'fig/Spatial-Averages';
 pars.Position = [250 250 875 650];
 pars.RMS_Range = [0, 1];
@@ -70,9 +70,9 @@ if numel(pars.Tag) > 1
     end
     for ii = 1:numel(pars.Tag)
         if nargout > 0
-            fig{ii} = tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
+            fig{ii} = charts.tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
         else
-            tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
+            charts.tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Tag', pars.Tag(ii));
         end
     end
     return;
@@ -112,9 +112,9 @@ if isempty(pars.Data)
             ch = 65:128;
         end
         if nargout > 0
-            fig.(array) = tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:,ch,:));
+            fig.(array) = charts.tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:,ch,:));
         else
-            tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:, ch, :));
+            charts.tiled_mean_arrays(SUBJ, YYYY, MM, DD, pars, 'Array', array, 'Data', data(:, ch, :));
         end
     end
     return;
