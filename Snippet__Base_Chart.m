@@ -14,6 +14,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
     % not enabled, then do not update 'YData' for that channel.
     
     properties(Access = public)
+        Axes
         Channel (1,64) double = 1:64
         Color_By_RMS (1,1) logical = true
         Enable (1,64) logical = true(1,64)
@@ -24,8 +25,11 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
 		LineWidth (1,1) double = 1.25
         Fc double = [] % Cutoff frequencies
         Fs (1,1) double = 4000 % Sample rate
-        RMS_Range double = [0, 20]; % Expected RMS range for use with Color_By_RMS method of coloration
-        Show_Labels logical = true;
+        RMS_Range (1,2) double = [0, 20];    % Expected RMS range for use with Color_By_RMS method of coloration
+        RMS_Epoch (1,2) double = [0, 0.030]; % Range used to compute RMS if Color_By_RMS is set to true (default; units should match units of XData)
+        Show_Labels (1,1) logical = true;
+        XColor = 'k';
+        YColor = 'k';
     end
     properties(Transient,NonCopyable,SetAccess = protected,GetAccess = public)
         EMG (:,1) matlab.graphics.chart.primitive.Line
@@ -43,13 +47,13 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
 	methods
         function obj = Snippet__Base_Chart(varargin)
             if numel(varargin) == 0
-                fig = uifigure('Color', 'w', 'HandleVisibility', 'on');
-                figure(fig);
+                g = uifigure('Color', 'w', 'HandleVisibility', 'on');
+                figure(g);
             else
                 if isa(varargin{1}, 'matlab.ui.Figure')
-                    fig = varargin{1};
-                    set(fig, 'HandleVisibility', 'on', 'Color', 'w');
-                    figure(fig);
+                    g = varargin{1};
+                    set(g, 'HandleVisibility', 'on', 'Color', 'w');
+                    figure(g);
                     varargin(1) = [];
                 elseif isa(varargin{1}, 'matlab.graphics.axis.Axes')
                     g = varargin{1};
@@ -68,6 +72,9 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                     set(g, 'HandleVisibility', 'on', 'Color', 'w');
                     g = varargin{1};
                     varargin(1) = [];
+                else
+                    g = uifigure('Color', 'w', 'HandleVisibility', 'on');
+                    figure(g);
                 end
 
                 if numel(varargin) > 0
@@ -81,6 +88,9 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                 obj.(varargin{iV}) = varargin{iV+1};
             end
             obj.Parent = g;
+        end
+        function ax = getParent(obj)
+            ax = getAxes(obj);
         end
 		function title(obj, varargin)
 			ax = getAxes(obj);
@@ -108,14 +118,18 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             ax = getAxes(obj);
             c = [winter(32); summer(32)];
             c_rms = cm.map('rosette');
+            c_rms(1,:) = [64 64 64]; % Make the first entry grey;
             obj.CData_ = cm.cmap(obj.RMS_Range, c_rms);
-            set(ax, 'NextPlot', 'add', ...
+            set(ax, ...
+                'NextPlot', 'add', ...
+                'XColor',obj.XColor,...
+                'YColor',obj.YColor,...
                 'ColorOrder', c, ...
+                'Colormap', double(obj.CData_(linspace(obj.RMS_Range(1), obj.RMS_Range(2), 64)))./255.0, ...
                 'FontName', 'Tahoma');
-            set(gcf, 'Color', 'w');
             if obj.Show_Labels
-                xlabel(ax, 'X-Grid (mm)', 'FontName', 'Tahoma', 'Color', 'k');
-                ylabel(ax, 'Y-Grid (mm)', 'FontName', 'Tahoma', 'Color', 'k');
+                xlabel(ax, 'X-Grid (mm)', 'FontName', 'Tahoma', 'Color', obj.XColor);
+                ylabel(ax, 'Y-Grid (mm)', 'FontName', 'Tahoma', 'Color', obj.YColor);
             end
         end
         function setMontage(obj, montage)
@@ -149,7 +163,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                 p(n).DataTipTemplate.DataTipRows(end+1) = dataTipTextRow('T (s)', 'UserData'); 
             end
             
-            tmp = obj.YData - mean(obj.YData, 1);
+            tmp = obj.YData - nanmean(obj.YData, 1); %#ok<NANMEAN> 
             if numel(obj.Fc) == 2
                 [b,a] = butter(4,(obj.Fc)./(obj.Fs / 2),'bandpass');
                 ydata = filtfilt(b,a,tmp);
@@ -163,7 +177,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
 
             ch = obj.Channel(obj.Enable);
             if isnan(obj.YScale)
-                yscl = 6.5 * median(abs(ydata(:)));
+                yscl = 6.5 * nanmedian(abs(ydata(:))); %#ok<NANMEDIAN> 
             else
                 yscl = obj.YScale;
             end
@@ -176,10 +190,16 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
 
             % Update the lines
             if obj.Color_By_RMS
+                rms_epoch_mask = (obj.XData > obj.RMS_Epoch(1)) & (obj.XData <= obj.RMS_Epoch(2));
+                if sum(rms_epoch_mask) == 0
+                    warning("Coloring by RMS, but no samples were inside RMS_Epoch period; using all samples instead.");
+                    rms_epoch_mask = true(size(obj.XData));
+                end
                 for n = 1:nPlotLinesNeeded
+                    rms_val = min(max(rms(ydata(rms_epoch_mask & ~isnan(ydata(:,n)),n)), obj.RMS_Range(1)), obj.RMS_Range(2));
                     set(p(n), 'XData', xdata + obj.XGrid(ch(n)), ...
                         'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
-                        'Color', double(obj.CData_(rms(ydata(:,n))))./255.0, ...
+                        'Color', double(obj.CData_(rms_val))./255.0, ...
                         'UserData', obj.XData, ...
                         'MarkerIndices', blanked_samples);
                 end

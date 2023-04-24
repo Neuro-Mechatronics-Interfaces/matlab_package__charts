@@ -1,4 +1,4 @@
-function fig = tiled_mean_arrays(SUBJ, YYYY, MM, DD, varargin)
+function [fig,h] = tiled_mean_arrays(SUBJ, YYYY, MM, DD, varargin)
 %TILED_MEAN_ARRAYS  Like tiled_snippet_arrays, but shows per-channel means.
 %
 % Syntax:
@@ -25,7 +25,6 @@ pars.Fc = []; % Set to 2 elements for bandpass (i.e. [25, 400]). 1 element for h
 pars.Folder_Expression = 'Run*'; % For detecting folders in `interleaved` generated location
 pars.Force_Save = false; % set true to force save even if fig handle output is requested (doesn't delete figure in this case).
 pars.Input_Root = 'R:/NMLShare/generated_data/primate/DARPA_N3/N3_Patch';
-pars.Labels = true; % Set to false to turn off "grid" markings
 pars.T = [10, 30]; % ms from stim-onset for epochs of interest
 pars.TS = [];
 pars.Tag = ''; % e.g. "Run24_J_5_-13EMU_Biphasic-Anodal"
@@ -35,7 +34,11 @@ pars.Type = @(varargin)charts.Snippet_Array_8_8_L_Chart(varargin{:});
 pars.Output_Figure_Root = 'fig/Spatial-Averages';
 pars.Position = [250 250 875 650];
 pars.RMS_Range = [0, 1];
+pars.RMS_Epoch = [10, 30]; % Epoch for computing RMS coloring
+pars.Show_Labels = false; % Set to false to turn off "grid" markings
 pars.Use_CAR = true;
+pars.XColor = 'none';
+pars.YColor = 'none';
 
 if numel(varargin) > 0
     if isstruct(varargin{1})
@@ -150,9 +153,9 @@ switch numel(pars.Fc)
 end
 mu = mean(abs(tmp(iSample,:,:)), 3);
 nexttile(L, pars.Tiled_Location{:});
-pars.Type('XData', pars.TS.ms(iSample), 'YData', mu, ...
-        'Fc', [], 'RMS_Range', pars.RMS_Range, 'Show_Labels', pars.Labels, ...
-        'Color_By_RMS', true, 'LineWidth', 1);
+h = pars.Type(L, 'XData', pars.TS.ms(iSample), 'YData', mu, ...
+        'Fc', [], 'RMS_Range', pars.RMS_Range, 'RMS_Epoch', pars.RMS_Epoch, 'Show_Labels', pars.Show_Labels, ...
+        'Color_By_RMS', true, 'LineWidth', 1, 'XColor',pars.XColor,'YColor',pars.YColor);
 
 if ((nargout < 1) || pars.Force_Save) && ~pars.Auto_Keep_Figure
     if exist(pars.Output_Figure_Root, 'dir')==0
