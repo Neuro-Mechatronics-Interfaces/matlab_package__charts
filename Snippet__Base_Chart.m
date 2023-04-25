@@ -112,6 +112,17 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             obj.CData_ = cm.cmap(rms_range, c_rms);
             obj.update();
         end
+        function refreshAxes(obj)
+            ax = getAxes(obj);
+            set(ax, ...
+                'XColor',obj.XColor,...
+                'YColor',obj.YColor,...
+                'Colormap', double(obj.CData_(linspace(obj.RMS_Range(1), obj.RMS_Range(2), 64)))./255.0);
+            if ~obj.Show_Labels
+                xlabel(ax, '', 'FontName', 'Tahoma', 'Color', obj.XColor);
+                ylabel(ax, '', 'FontName', 'Tahoma', 'Color', obj.YColor);
+            end
+        end
     end
     methods(Access = protected)
         function setup(obj)
