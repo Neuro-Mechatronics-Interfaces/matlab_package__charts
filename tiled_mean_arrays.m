@@ -26,7 +26,7 @@ pars.Folder_Expression = 'Run*'; % For detecting folders in `interleaved` genera
 pars.Force_Save = false; % set true to force save even if fig handle output is requested (doesn't delete figure in this case).
 pars.Input_Root = 'R:/NMLShare/generated_data/primate/DARPA_N3/N3_Patch';
 pars.T = [10, 30]; % ms from stim-onset for epochs of interest
-pars.TS = [];
+pars.TS = []; % Timestamp vector (ms)
 pars.Tag = ''; % e.g. "Run24_J_5_-13EMU_Biphasic-Anodal"
 pars.Tiled_Layout = [];  % Can send `tiled_layout` object and will use that as a container instead of making a new figure handle.
 pars.Tiled_Location = {1, [1,1]};
@@ -90,7 +90,7 @@ if isempty(pars.Data)
         data = in.filt_data;
     end
     if isempty(pars.TS)
-        pars.TS = in.t;
+        pars.TS = in.t.ms;
     end
     
     if nargout > 0
@@ -140,7 +140,7 @@ else
     L = pars.Tiled_Layout;
 end
 
-iSample = (pars.TS.ms > pars.T(1)) & (pars.TS.ms <= pars.T(2));
+iSample = (pars.TS > pars.T(1)) & (pars.TS <= pars.T(2));
 switch numel(pars.Fc)
     case 0
         tmp = pars.Data;
@@ -153,7 +153,7 @@ switch numel(pars.Fc)
 end
 mu = mean(abs(tmp(iSample,:,:)), 3);
 nexttile(L, pars.Tiled_Location{:});
-h = pars.Type(L, 'XData', pars.TS.ms(iSample), 'YData', mu, ...
+h = pars.Type(L, 'XData', pars.TS(iSample), 'YData', mu, ...
         'Fc', [], 'RMS_Range', pars.RMS_Range, 'RMS_Epoch', pars.RMS_Epoch, 'Show_Labels', pars.Show_Labels, ...
         'Color_By_RMS', true, 'LineWidth', 1, 'XColor',pars.XColor,'YColor',pars.YColor);
 

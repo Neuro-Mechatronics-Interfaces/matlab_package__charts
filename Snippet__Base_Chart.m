@@ -14,7 +14,6 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
     % not enabled, then do not update 'YData' for that channel.
     
     properties(Access = public)
-        Axes
         Channel (1,64) double = 1:64
         Color_By_RMS (1,1) logical = true
         Enable (1,64) logical = true(1,64)
