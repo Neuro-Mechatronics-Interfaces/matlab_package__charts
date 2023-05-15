@@ -18,6 +18,7 @@ function [fig,h] = tiled_mean_arrays(SUBJ, YYYY, MM, DD, varargin)
 pars = struct;
 pars.Array = "A";
 pars.Auto_Keep_Figure = false; % Setting true doesn't delete figure even if output is not requested.
+pars.CData = nan(1,64);
 pars.Data = [];  % e.g. car_filt_data(:,1:64,:);  from UNI_DATA.mat file
 pars.Data_File = 'UNI_DATA.mat';
 pars.Experiment = ''; % e.g. "Forrest_2022_11_08_A_24";
@@ -155,7 +156,7 @@ mu = mean(abs(tmp(iSample,:,:)), 3);
 nexttile(L, pars.Tiled_Location{:});
 h = pars.Type(L, 'XData', pars.TS(iSample), 'YData', mu, ...
         'Fc', [], 'RMS_Range', pars.RMS_Range, 'RMS_Epoch', pars.RMS_Epoch, 'Show_Labels', pars.Show_Labels, ...
-        'Color_By_RMS', true, 'LineWidth', 1, 'XColor',pars.XColor,'YColor',pars.YColor);
+        'Color_By_RMS', true, 'CData', pars.CData, 'LineWidth', 1, 'XColor',pars.XColor,'YColor',pars.YColor);
 
 if ((nargout < 1) || pars.Force_Save) && ~pars.Auto_Keep_Figure
     if exist(pars.Output_Figure_Root, 'dir')==0

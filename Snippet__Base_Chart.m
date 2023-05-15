@@ -15,6 +15,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
     
     properties(Access = public)
         Channel (1,64) double = 1:64
+        CData (1,64) double = NaN
         Color_By_RMS (1,1) logical = true
         Enable (1,64) logical = true(1,64)
         XData (:,1) double = NaN    % Can be used to store time data
@@ -206,7 +207,11 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                     rms_epoch_mask = true(size(obj.XData));
                 end
                 for n = 1:nPlotLinesNeeded
-                    rms_val = min(max(rms(ydata(rms_epoch_mask & ~isnan(ydata(:,n)),n)), obj.RMS_Range(1)), obj.RMS_Range(2));
+                    if isnan(obj.CData(n))
+                        rms_val = min(max(rms(ydata(rms_epoch_mask & ~isnan(ydata(:,n)),n)), obj.RMS_Range(1)), obj.RMS_Range(2));
+                    else
+                        rms_val = min(max(obj.CData(n),obj.RMS_Range(1)),obj.RMS_Range(2));
+                    end
                     set(p(n), 'XData', xdata + obj.XGrid(ch(n)), ...
                         'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
                         'Color', double(obj.CData_(rms_val))./255.0, ...
@@ -219,6 +224,10 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                         'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
                         'UserData', obj.XData, ...
                         'MarkerIndices', blanked_samples);
+                    if ~isnan(obj.CData(n))
+                        cval = min(max(obj.CData(n),obj.RMS_Range(1)),obj.RMS_Range(2));
+                        set(p(n), 'Color', double(obj.CData_(cval))./255.0);
+                    end
                 end
             end
             % Delete unneeded lines
