@@ -92,3 +92,42 @@ Montage names refer to the spacing ("large - L or small - S", number of rows, an
 * `L88` - For the standard 8x8 grids that are most-used in the lab.
 * `S88` - For the small 8x8 grids.  
 You can use the corresponding named subclasses and modify any of the values in the `config.yaml` corresponding to that name convention in order to change the electrode spacing if you need a different spacing than what exists (or add a category and add a corresponding chart subclass as desired). 
+
+---
+
+## Content Overview ##  
+* [Functions](#functions)
+  + [Utilities](#utilities)
+  + [Helper Functions](#helpers)
+* [Classes](#classes)
+  + [Base Classes](#base-classes)
+  + [Specific Layouts](#specific-layouts)
+* [Examples](#examples)
+
+### Functions ###
+#### Utilities ####  
+ + [`get_config`](get_config.m) - Returns the config struct for this submodule.  
+
+#### Helpers ####  
+ + [`tiled_mean_arrays`](tiled_mean_arrays.m) - Like tiled_snippet_arrays, but shows per-channel means.  
+ + [`tiled_snippet_arrays`](tiled_snippet_arrays.m) - Create tiled snippet array figure(s).  
+
+### Classes ###
+#### Base Classes ####  
+ + [`Contour__Base_Chart`](Contour__Base_Chart.m) - c = Contour__Base_Chart('XData', X, 'YData', Y, 'Name', Value,...).  
+ + [`Raster__Base_Chart`](Raster__Base_Chart.m) - c = Raster__Base_Chart('TLim', seconds(n), 'Name', Value,...) - Shades in a square with an intensity color for every gridded data point.  
+ + [`Snippet__Base_Chart`](Snippet__Base_Chart.m) - c = Snippet__Base_Chart('XData', X, 'YData', Y, 'Name', Value,...).  
+
+#### Specific Layouts ####  
+ + [`Contour_Array_8_8_L_Chart`](Contour_Array_8_8_L_Chart.m) - c = Contour_Array_8_8_L_Chart('YData',Y,Name,Value,...).  
+ + [`Raster_Array_4_8_L_Chart`](Raster_Array_4_8_L_Chart.m) - c = Raster_Array_4_8_L_Chart('YData',Y,Name,Value,...).  
+ + [`Raster_Array_8_4_L_Chart`](Raster_Array_8_4_L_Chart.m) - c = Raster_Array_8_4_L_Chart('YData',Y,Name,Value,...).  
+ + [`Raster_Array_8_8_L_Chart`](Raster_Array_8_8_L_Chart.m) - c = Raster_Array_8_8_L_Chart('YData',Y,Name,Value,...).  
+ + [`Raster_Array_8_8_S_Chart`](Raster_Array_8_8_S_Chart.m) - c = Raster_Array_8_8_S_Chart('YData',Y,Name,Value,...).  
+ + [`Snippet_Array_8_8_L_Chart`](Snippet_Array_8_8_L_Chart.m) - c = Snippet_Array_8_8_L_Chart('YData',Y,Name,Value,...).  
+ + [`Snippet_Array_8_8_S_Chart`](Snippet_Array_8_8_S_Chart.m) - c = Snippet_Array_8_8_S_Chart('YData',Y,Name,Value,...).  
+ + [`Snippet_Cloth_4_8_L_Chart`](Snippet_Cloth_4_8_L_Chart.m) - c = Snippet_Cloth_4_8_L_Chart('YData',Y,Name,Value,...).  
+ + [`Snippet_Cloth_8_4_L_Chart`](Snippet_Cloth_8_4_L_Chart.m) - c = Snippet_Cloth_8_4_L_Chart('YData',Y,Name,Value,...).  
+
+### Examples ###  
+ + [`example_plotting_tiled_snippets`](example_plotting_tiled_snippets.m) - Example showing how to plot tiled snippet files. 
