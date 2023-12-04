@@ -1,9 +1,9 @@
 [submodule "+io"]
 	path = +io
-	url = git@github.com:m053m716/-io.git
+	url = git@github.com:Neuro-Mechatronics-Interfaces/matlab_package__io.git
 [submodule "+utils"]
 	path = +utils
-	url = git@github.com:Neuro-Mechatronics-Interfaces/NHP_MATLAB_Utilities
+	url = git@github.com:Neuro-Mechatronics-Interfaces/NHP_MATLAB_Utilities.git
 [submodule "+default"]
 	path = +default
 	url = git@github.com:m053m716/Matlab-Defaults
