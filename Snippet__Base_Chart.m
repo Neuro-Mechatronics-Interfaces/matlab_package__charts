@@ -18,6 +18,8 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         CData (1,64) double = NaN
         Color_By_RMS (1,1) logical = true
         Enable (1,64) logical = true(1,64)
+        FlipXGrid (1,1) logical = false;
+        FlipYGrid (1,1) logical = false;
         XData (:,1) double = NaN    % Can be used to store time data
         YData (:,:) double = NaN
         TrigData (:,1) double = NaN
@@ -33,12 +35,14 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
     end
     properties(Transient,NonCopyable,SetAccess = protected,GetAccess = public)
         EMG (:,1) matlab.graphics.chart.primitive.Line
+        Outline_ (1,1) matlab.graphics.chart.primitive.Line
     end
     properties(SetAccess = protected, GetAccess = public)
         YScale (1, 1) double = nan % If non-nan then this used to scale vertical bounds
         XScale (1, 2) double = nan(1,2)% Scaling to constrain line object "spatial" bounds (mm)
         XGrid (:, 8) double = nan(8,8) % X-coordinate centers (mm)
         YGrid (:, 8) double = nan(8,8) % Y-coordinate centers (mm)
+        Outline (:,2) double = [];
         Montage (1,1) string % Can be: "L88" "S88" "L48" "L84"
     end 
     properties(Access = protected)
@@ -128,15 +132,12 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         function setup(obj)
             ax = getAxes(obj);
             c = [winter(32); summer(32)];
-            c_rms = cm.map('rosette');
-            c_rms(1,:) = [64 64 64]; % Make the first entry grey;
-            obj.CData_ = cm.cmap(obj.RMS_Range, c_rms);
             set(ax, ...
                 'NextPlot', 'add', ...
                 'XColor',obj.XColor,...
                 'YColor',obj.YColor,...
                 'ColorOrder', c, ...
-                'Colormap', double(obj.CData_(linspace(obj.RMS_Range(1), obj.RMS_Range(2), 64)))./255.0, ...
+                ...'Colormap', double(obj.CData_(linspace(obj.RMS_Range(1), obj.RMS_Range(2), 64)))./255.0, ...
                 'FontName', 'Tahoma');
             if obj.Show_Labels
                 xlabel(ax, 'X-Grid (mm)', 'FontName', 'Tahoma', 'Color', obj.XColor);
@@ -150,12 +151,26 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             % Get the axes
             ax = getAxes(obj);
             
+            c_rms = cm.map('rosette');
+            c_rms(1,:) = [64 64 64]; % Make the first entry grey;
+            obj.CData_ = cm.cmap(obj.RMS_Range, c_rms);
+
             % Determine x-coordinates for electrodes
             if any(isnan(obj.XData))
                 xdata = linspace(obj.XScale(1), obj.XScale(2), size(obj.YData,1));
                 obj.XData = ((1:size(obj.YData,1))')./obj.Fs;
             else
                 xdata = linspace(obj.XScale(1), obj.XScale(2), numel(obj.XData));
+            end
+            if obj.FlipXGrid
+                xsclg = -1;
+            else
+                xsclg = 1;
+            end
+            if obj.FlipYGrid
+                ysclg = -1;
+            else
+                ysclg = 1;
             end
 
             % Create extra lines as needed
@@ -212,16 +227,18 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                     else
                         rms_val = min(max(obj.CData(n),obj.RMS_Range(1)),obj.RMS_Range(2));
                     end
-                    set(p(n), 'XData', xdata + obj.XGrid(ch(n)), ...
-                        'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
+                    set(p(n), ...
+                        'XData', xdata + obj.XGrid(ch(n))*xsclg, ...
+                        'YData', ydata(:,n)./yscl + obj.YGrid(ch(n))*ysclg, ...
                         'Color', double(obj.CData_(rms_val))./255.0, ...
                         'UserData', obj.XData, ...
                         'MarkerIndices', blanked_samples);
                 end
             else
                 for n = 1:nPlotLinesNeeded
-                    set(p(n), 'XData', xdata + obj.XGrid(ch(n)), ...
-                        'YData', ydata(:,n)./yscl + obj.YGrid(ch(n)), ...
+                    set(p(n), ...
+                        'XData', xdata + obj.XGrid(ch(n))*xsclg, ...
+                        'YData', ydata(:,n)./yscl + obj.YGrid(ch(n))*ysclg, ...
                         'UserData', obj.XData, ...
                         'MarkerIndices', blanked_samples);
                     if ~isnan(obj.CData(n))
@@ -234,6 +251,9 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             delete(p((nPlotLinesNeeded+1):numel(p)))
             obj.EMG = p(1:nPlotLinesNeeded);
             
+            
+            obj.Outline_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', obj.Outline(:,1).*xsclg, 'YData', obj.Outline(:,2).*ysclg,'Color','k','LineWidth',1.25);
+            obj.Outline_.Annotation.LegendInformation.IconDisplayStyle = 'off';
         end
     end
 end

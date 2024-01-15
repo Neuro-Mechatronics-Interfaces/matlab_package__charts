@@ -20,15 +20,16 @@ classdef Snippet_Array_8_8_L_Chart < charts.Snippet__Base_Chart
     end
     methods (Access = protected)
         function setup(obj)
-            setup@charts.Snippet__Base_Chart(obj);
             obj.Montage = "L88";
-            cfg = charts.get_config('config.yaml');
+            cfg = charts.get_config('config.yaml', obj.Montage);
+            obj.Outline = [cfg.XOutline; cfg.YOutline]';
+            setup@charts.Snippet__Base_Chart(obj);
             set(obj, ...
-                'XScale', cfg.(obj.Montage).XScale, ...
-                'XGrid', reshape(cfg.(obj.Montage).XGrid, 8, 8), ...
-                'YGrid', reshape(cfg.(obj.Montage).YGrid, 8, 8));
+                'XScale', cfg.XScale, ...
+                'XGrid', reshape(cfg.XGrid, 8, 8), ...
+                'YGrid', reshape(cfg.YGrid, 8, 8));
             ax = getAxes(obj);
-            set(ax, 'XLim', [-40 40], 'YLim', [-40 40]);
+            set(ax, 'XLim', [-45 45], 'YLim', [-45 45]);
         end
     end
 end

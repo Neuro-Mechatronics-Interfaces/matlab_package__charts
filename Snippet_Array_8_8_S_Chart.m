@@ -20,13 +20,14 @@ classdef Snippet_Array_8_8_S_Chart < charts.Snippet__Base_Chart
     end
     methods (Access = protected)
         function setup(obj)
-            setup@charts.Snippet__Base_Chart(obj);
             obj.Montage = "S88";
-            cfg = charts.get_config('config.yaml');
+            cfg = charts.get_config('config.yaml', obj.Montage);
+            obj.Outline = [cfg.XOutline, cfg.YOutline]';
+            setup@charts.Snippet__Base_Chart(obj);
             set(obj, ...
-                'XScale', cfg.(obj.Montage).XScale, ...
-                'XGrid', reshape(cfg.(obj.Montage).XGrid, 8, 8), ...
-                'YGrid', reshape(cfg.(obj.Montage).YGrid, 8, 8));
+                'XScale', cfg.XScale, ...
+                'XGrid', reshape(cfg.XGrid, 8, 8), ...
+                'YGrid', reshape(cfg.YGrid, 8, 8));
         end
     end
 end
