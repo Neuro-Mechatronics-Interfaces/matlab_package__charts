@@ -20,6 +20,8 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         Enable (1,64) logical = true(1,64)
         FlipXGrid (1,1) logical = false;
         FlipYGrid (1,1) logical = false;
+        HUnits (1,1) string {mustBeTextScalar} = "s";
+        VUnits (1,1) string {mustBeTextScalar} = "\muV";
         XData (:,1) double = NaN    % Can be used to store time data
         YData (:,:) double = NaN
         TrigData (:,1) double = NaN
@@ -34,8 +36,12 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         YColor = 'k';
     end
     properties(Transient,NonCopyable,SetAccess = protected,GetAccess = public)
-        EMG (:,1) matlab.graphics.chart.primitive.Line
+        EMG_ (:,1) matlab.graphics.chart.primitive.Line
         Outline_ (1,1) matlab.graphics.chart.primitive.Line
+        VScale_ (1,1) matlab.graphics.chart.primitive.Line
+        VSText_ (1,1) matlab.graphics.primitive.Text
+        HScale_ (1,1) matlab.graphics.chart.primitive.Line
+        HSText_ (1,1) matlab.graphics.primitive.Text
     end
     properties(SetAccess = protected, GetAccess = public)
         YScale (1, 1) double = nan % If non-nan then this used to scale vertical bounds
@@ -100,13 +106,58 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
 			ax = getAxes(obj);
 			title(ax, varargin{:});
         end
+        function subtitle(obj, varargin)
+            ax = getAxes(obj);
+            subtitle(ax, varargin{:});
+        end
         function xlabel(obj, varargin)
             ax = getAxes(obj);
             xlabel(ax, varargin{:});
         end
+        function xlim(obj, limits)
+            arguments
+                obj
+                limits (1,2) double
+            end
+            ax = getAxes(obj);
+            xlim(ax, limits);
+        end
         function ylabel(obj, varargin)
             ax = getAxes(obj);
             ylabel(ax, varargin{:});
+        end
+        function ylim(obj, limits)
+            arguments
+                obj
+                limits (1,2) double
+            end
+            ax = getAxes(obj);
+            ylim(ax, limits);
+        end
+        function setVerticalScale(obj, yscale)
+            arguments
+                obj
+                yscale (1,1) double
+            end
+            obj.YScale = yscale;
+
+            obj.update();
+        end
+        function setHorizontalScale(obj, xleft, xright)
+            arguments
+                obj
+                xleft (1,1) double
+                xright (1,1) double
+            end
+            obj.XScale = [xleft, xright];
+            obj.update();
+        end
+        function setFigurePosition(obj, xywh)
+            arguments
+                obj
+                xywh (1,4) double % [X, Y, Width, Height] (pixels)
+            end
+            obj.Parent.Position = xywh;
         end
         function setRMS_Range(obj, rms_range, c_rms)
             if nargin < 3
@@ -174,7 +225,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             end
 
             % Create extra lines as needed
-            p = obj.EMG;
+            p = obj.EMG_;
             nPlotLinesNeeded = size(obj.YData, 2);
             nPlotLinesHave = numel(p);
             for n = (nPlotLinesHave+1):nPlotLinesNeeded
@@ -186,26 +237,26 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                     'MarkerIndices', [], ...
                     'LineWidth', obj.LineWidth, ...
                     'UserData', obj.XData);
-                p(n).DataTipTemplate.DataTipRows(end+1) = dataTipTextRow('T (s)', 'UserData'); 
             end
             
-            tmp = obj.YData - nanmean(obj.YData, 1); %#ok<NANMEAN> 
+%             tmp = obj.YData - nanmean(obj.YData, 1); %#ok<NANMEAN> 
             if numel(obj.Fc) == 2
                 [b,a] = butter(4,(obj.Fc)./(obj.Fs / 2),'bandpass');
-                ydata = filtfilt(b,a,tmp);
+                ydata = filtfilt(b,a,obj.YData);
             elseif isempty(obj.Fc)
-                ydata = tmp;
+                ydata = obj.YData;
             else
                 [b,a] = butter(2,(obj.Fc)./(obj.Fs / 2), 'high');
-                ydata = filter(b,a,tmp);
+                ydata = filter(b,a,obj.YData);
             end
             
 
             ch = obj.Channel(obj.Enable);
             if isnan(obj.YScale)
                 yscl = 6.5 * nanmedian(abs(ydata(:))); %#ok<NANMEDIAN> 
+                obj.YScale = yscl;
             else
-                yscl = obj.YScale;
+                yscl = obj.YScale / (obj.XData(2)-obj.XData(1));
             end
 
             if ~any(isnan(obj.TrigData))
@@ -233,6 +284,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                         'Color', double(obj.CData_(rms_val))./255.0, ...
                         'UserData', obj.XData, ...
                         'MarkerIndices', blanked_samples);
+                    p(n).DataTipTemplate.DataTipRows = [dataTipTextRow(sprintf('T (%s)',obj.HUnits), 'UserData'); dataTipTextRow(sprintf('EMG (%s)',obj.VUnits), ydata(:,n))]; 
                 end
             else
                 for n = 1:nPlotLinesNeeded
@@ -245,15 +297,25 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
                         cval = min(max(obj.CData(n),obj.RMS_Range(1)),obj.RMS_Range(2));
                         set(p(n), 'Color', double(obj.CData_(cval))./255.0);
                     end
+                    p(n).DataTipTemplate.DataTipRows = [dataTipTextRow(sprintf('T (%s)',obj.HUnits), 'UserData'); dataTipTextRow(sprintf('EMG (%s)',obj.VUnits), ydata(:,n))]; 
                 end
             end
             % Delete unneeded lines
             delete(p((nPlotLinesNeeded+1):numel(p)))
-            obj.EMG = p(1:nPlotLinesNeeded);
+            obj.EMG_ = p(1:nPlotLinesNeeded);
             
             
             obj.Outline_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', obj.Outline(:,1).*xsclg, 'YData', obj.Outline(:,2).*ysclg,'Color','k','LineWidth',1.25);
             obj.Outline_.Annotation.LegendInformation.IconDisplayStyle = 'off';
+
+            obj.HScale_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', (obj.Outline(1,1)+2.*xsclg)+([0, xsclg*(obj.XScale(2)-obj.XScale(1))]), 'YData', ones(1,2).*(obj.Outline(1,2)-4.5.*ysclg),'Color','k','LineWidth',1.25);
+            obj.HScale_.Annotation.LegendInformation.IconDisplayStyle = 'off';
+            obj.HSText_ = matlab.graphics.primitive.Text('Parent', ax, 'String', sprintf('%d %s',round(obj.XData(end)-obj.XData(1)),obj.HUnits), 'Position', [xsclg*(obj.XScale(2)-obj.XScale(1))+obj.Outline(1,1)+3.5.*xsclg,obj.Outline(1,2)-4.5.*ysclg],'Color','k','FontName','Tahoma','VerticalAlignment','middle','HorizontalAlignment','left');
+
+            obj.VScale_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', ones(1,2).*(obj.Outline(1,1)+2.*xsclg), 'YData', (obj.Outline(1,2)-4.5.*ysclg) + ([0, ysclg*yscl/obj.YScale]),'Color','k','LineWidth',1.25);
+            obj.VScale_.Annotation.LegendInformation.IconDisplayStyle = 'off';
+            obj.VSText_ = matlab.graphics.primitive.Text('Parent', ax, 'String', sprintf('%d %s',round(obj.YScale),obj.VUnits), 'Position', [obj.Outline(1,1)+2.5.*xsclg,obj.Outline(1,2)-4.5.*ysclg+0.5*ysclg*yscl/obj.YScale],'Color','k','FontName','Tahoma','VerticalAlignment','bottom','HorizontalAlignment','left');
+
         end
     end
 end

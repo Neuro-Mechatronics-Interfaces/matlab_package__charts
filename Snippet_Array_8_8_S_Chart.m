@@ -22,7 +22,7 @@ classdef Snippet_Array_8_8_S_Chart < charts.Snippet__Base_Chart
         function setup(obj)
             obj.Montage = "S88";
             cfg = charts.get_config('config.yaml', obj.Montage);
-            obj.Outline = [cfg.XOutline, cfg.YOutline]';
+            obj.Outline = [cfg.XOutline; cfg.YOutline]';
             setup@charts.Snippet__Base_Chart(obj);
             set(obj, ...
                 'XScale', cfg.XScale, ...
