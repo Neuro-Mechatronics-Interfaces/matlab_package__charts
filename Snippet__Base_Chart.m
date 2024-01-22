@@ -126,6 +126,11 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             ax = getAxes(obj);
             ylabel(ax, varargin{:});
         end
+        function colorbar(obj, varargin)
+            ax = getAxes(obj);
+            c = colorbar(ax, varargin{:});
+            title(c, sprintf('RMS (%s)', obj.VUnits), 'FontName','Tahoma','Color','k');
+        end
         function ylim(obj, limits)
             arguments
                 obj
@@ -183,12 +188,15 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         function setup(obj)
             ax = getAxes(obj);
             c = [winter(32); summer(32)];
+            c_rms = cm.map('rosette');
+            c_rms(1,:) = [64 64 64]; % Make the first entry grey;
+            obj.CData_ = cm.cmap(obj.RMS_Range, c_rms);
             set(ax, ...
                 'NextPlot', 'add', ...
                 'XColor',obj.XColor,...
                 'YColor',obj.YColor,...
                 'ColorOrder', c, ...
-                ...'Colormap', double(obj.CData_(linspace(obj.RMS_Range(1), obj.RMS_Range(2), 64)))./255.0, ...
+                'Colormap', double(obj.CData_(linspace(obj.RMS_Range(1), obj.RMS_Range(2), 64)))./255.0, ...
                 'FontName', 'Tahoma');
             if obj.Show_Labels
                 xlabel(ax, 'X-Grid (mm)', 'FontName', 'Tahoma', 'Color', obj.XColor);
@@ -201,6 +209,7 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
         function update(obj)
             % Get the axes
             ax = getAxes(obj);
+            ax.CLim = obj.RMS_Range;
             
             c_rms = cm.map('rosette');
             c_rms(1,:) = [64 64 64]; % Make the first entry grey;
@@ -253,11 +262,9 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
 
             ch = obj.Channel(obj.Enable);
             if isnan(obj.YScale)
-                yscl = 6.5 * nanmedian(abs(ydata(:))); %#ok<NANMEDIAN> 
-                obj.YScale = yscl;
-            else
-                yscl = obj.YScale / (obj.XData(2)-obj.XData(1));
+                obj.YScale = 6.5 * nanmedian(abs(ydata(:))); %#ok<NANMEDIAN> 
             end
+            yscl = obj.YScale./(obj.XScale(2)-obj.XScale(1));
 
             if ~any(isnan(obj.TrigData))
                 blanked_samples = find(bitand(obj.TrigData, 2^obj.TriggerBit) == 0);
@@ -304,17 +311,21 @@ classdef Snippet__Base_Chart < matlab.graphics.chartcontainer.ChartContainer
             delete(p((nPlotLinesNeeded+1):numel(p)))
             obj.EMG_ = p(1:nPlotLinesNeeded);
             
-            
+            delete(obj.Outline_);
             obj.Outline_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', obj.Outline(:,1).*xsclg, 'YData', obj.Outline(:,2).*ysclg,'Color','k','LineWidth',1.25);
             obj.Outline_.Annotation.LegendInformation.IconDisplayStyle = 'off';
 
-            obj.HScale_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', (obj.Outline(1,1)+2.*xsclg)+([0, xsclg*(obj.XScale(2)-obj.XScale(1))]), 'YData', ones(1,2).*(obj.Outline(1,2)-4.5.*ysclg),'Color','k','LineWidth',1.25);
+            delete(obj.HScale_);
+            delete(obj.HSText_);
+            obj.HScale_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', (obj.Outline(1,1)+2.*xsclg)+([-xsclg*(obj.XScale(2)-obj.XScale(1)),0]), 'YData', ones(1,2).*(obj.Outline(1,2)-4.5.*ysclg),'Color','k','LineWidth',1.25);
             obj.HScale_.Annotation.LegendInformation.IconDisplayStyle = 'off';
-            obj.HSText_ = matlab.graphics.primitive.Text('Parent', ax, 'String', sprintf('%d %s',round(obj.XData(end)-obj.XData(1)),obj.HUnits), 'Position', [xsclg*(obj.XScale(2)-obj.XScale(1))+obj.Outline(1,1)+3.5.*xsclg,obj.Outline(1,2)-4.5.*ysclg],'Color','k','FontName','Tahoma','VerticalAlignment','middle','HorizontalAlignment','left');
+            obj.HSText_ = matlab.graphics.primitive.Text('Parent', ax, 'String', sprintf('%d %s',round(obj.XData(end)-obj.XData(1)),obj.HUnits), 'Position', [-xsclg*(obj.XScale(2)-obj.XScale(1))+obj.Outline(1,1)+3.5.*xsclg,obj.Outline(1,2)-4.5.*ysclg],'Color','k','FontName','Tahoma','VerticalAlignment','top','HorizontalAlignment','left');
 
-            obj.VScale_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', ones(1,2).*(obj.Outline(1,1)+2.*xsclg), 'YData', (obj.Outline(1,2)-4.5.*ysclg) + ([0, ysclg*yscl/obj.YScale]),'Color','k','LineWidth',1.25);
+            delete(obj.VScale_);
+            delete(obj.VSText_);
+            obj.VScale_ = matlab.graphics.chart.primitive.Line('Parent', ax, 'XData', ones(1,2).*(obj.Outline(1,1)+2.*xsclg-xsclg*(obj.XScale(2)-obj.XScale(1))), 'YData', (obj.Outline(1,2)-4.5.*ysclg) + ([0, ysclg*(obj.XScale(2)-obj.XScale(1))]),'Color','k','LineWidth',1.25);
             obj.VScale_.Annotation.LegendInformation.IconDisplayStyle = 'off';
-            obj.VSText_ = matlab.graphics.primitive.Text('Parent', ax, 'String', sprintf('%d %s',round(obj.YScale),obj.VUnits), 'Position', [obj.Outline(1,1)+2.5.*xsclg,obj.Outline(1,2)-4.5.*ysclg+0.5*ysclg*yscl/obj.YScale],'Color','k','FontName','Tahoma','VerticalAlignment','bottom','HorizontalAlignment','left');
+            obj.VSText_ = matlab.graphics.primitive.Text('Parent', ax, 'String', sprintf('%d%s',round(obj.YScale),obj.VUnits), 'Position', [obj.Outline(1,1)+2.*xsclg-xsclg*(obj.XScale(2)-obj.XScale(1)),obj.Outline(1,2)-4.5.*ysclg+0.5*ysclg*yscl/obj.YScale],'Color','k','FontName','Tahoma','VerticalAlignment','bottom','HorizontalAlignment','right');
 
         end
     end
