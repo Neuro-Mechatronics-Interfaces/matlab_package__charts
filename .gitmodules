@@ -9,4 +9,4 @@
 	url = git@github.com:m053m716/Matlab-Defaults
 [submodule "+cm"]
 	path = +cm
-	url = git@github.com:m053m716/cm.git
+	url = git@github.com:Neuro-Mechatronics-Interfaces/matlab_package__cm.git
